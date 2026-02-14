@@ -4,24 +4,44 @@ import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { API_URL } from '@/lib/constants';
 
 let socket: Socket;
 
+interface Signal {
+  activity: string;
+  username?: string;
+  location?: { lat: number; lng: number };
+  visual: {
+    top: string;
+    left: string;
+  };
+}
+
 export default function SignalRadar() {
-  const [activeSignals, setActiveSignals] = useState<any[]>([]);
-  const [isScanning, setIsScanning] = useState(true);
+  const [activeSignals, setActiveSignals] = useState<Signal[]>([]);
+  const [isScanning] = useState(true);
 
   useEffect(() => {
     // Initialize Socket
-    socket = io('http://localhost:5000');
+    socket = io(API_URL);
 
     socket.on('connect', () => {
       // console.log('Connected to Signal Network');
     });
 
-    socket.on('signal-received', (data) => {
+    socket.on('signal-received', (data: Omit<Signal, 'visual'>) => {
       // console.log('New Signal:', data);
-      setActiveSignals((prev) => [...prev, data]);
+      const newSignal: Signal = {
+        ...data,
+        visual: {
+          // Random position for mock visualization calculated ONCE upon receipt
+          // In prod, map exact relative coordinates
+          top: `${50 + (Math.random() * 60 - 30)}%`,
+          left: `${50 + (Math.random() * 60 - 30)}%`
+        }
+      };
+      setActiveSignals((prev) => [...prev, newSignal]);
     });
 
     return () => {
@@ -62,10 +82,8 @@ export default function SignalRadar() {
           key={idx}
           className="absolute z-20 cursor-pointer group"
           style={{
-            // Random position for mock visualization if lat/lng is missing or too close
-            // In prod, map exact relative coordinates
-            top: `${50 + (Math.random() * 60 - 30)}%`,
-            left: `${50 + (Math.random() * 60 - 30)}%`
+            top: signal.visual.top,
+            left: signal.visual.left
           }}
         >
           <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center hover:scale-110 transition shadow-[0_0_15px_rgba(250,204,21,0.6)] animate-bounce-slow">

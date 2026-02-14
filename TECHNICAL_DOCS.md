@@ -62,6 +62,6 @@ The frontend uses standard Next.js environment handling (currently none required
 ## 🚀 Future Roadmap
 
 1.  **Geolocation**: Integrate `navigator.geolocation` to filter signals by 5km radius.
-2.  **Mapbox**: Replace Radar visual with interactive map.
+2.  **Interactive Map**: Enhance map with OpenStreetMap + Leaflet (Current Implementation).
 3.  **Chat**: Add private messaging between matched users.
 4.  **Image Uploads**: Allow users to upload photos for quest proof (e.g., using AWS S3 or Cloudinary).

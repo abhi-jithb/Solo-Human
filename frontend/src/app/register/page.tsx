@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { API_URL } from '@/lib/constants';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -14,7 +15,7 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/register', formData);
+            const res = await axios.post(`${API_URL}/api/auth/register`, formData);
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             router.push('/dashboard');
@@ -85,7 +86,7 @@ export default function RegisterPage() {
 
             {/* Left: Visuals */}
             <div className="hidden md:flex flex-col justify-center items-center relative overflow-hidden bg-pink-900/20 p-12 order-1 md:order-2">
-                <div className="absolute inset-0 bg-[url('/bg-grid.svg')] opacity-20"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(#ffffff33_1px,transparent_1px)] [background-size:16px_16px] opacity-20"></div>
                 <div className="w-96 h-96 bg-pink-600 rounded-full blur-[100px] opacity-30 absolute"></div>
 
                 <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-orange-600 z-10 mb-6 text-center">

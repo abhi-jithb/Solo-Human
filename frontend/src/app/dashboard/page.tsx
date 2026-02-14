@@ -10,6 +10,8 @@ import SignalRadar from "@/components/SignalRadar";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
 import CreateSignalModal from "@/components/CreateSignalModal";
+import MapView from "@/components/MapView";
+import { API_URL } from "@/lib/constants";
 
 interface Quest {
     _id: string;
@@ -32,6 +34,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [isSignalModalOpen, setIsSignalModalOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<'Radar' | 'Map'>('Map');
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -44,7 +47,7 @@ export default function Dashboard() {
 
         const fetchQuests = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/quests');
+                const res = await axios.get(`${API_URL}/api/quests`);
                 setQuests(res.data);
             } catch (err) {
                 console.error(err);
@@ -67,7 +70,7 @@ export default function Dashboard() {
             <Navbar />
 
             {/* Decorative Background */}
-            <div className="fixed inset-0 bg-[url('/bg-grid.svg')] bg-center opacity-10 pointer-events-none"></div>
+            <div className="fixed inset-0 bg-[radial-gradient(#ffffff33_1px,transparent_1px)] [background-size:16px_16px] opacity-10 pointer-events-none"></div>
             <div className="fixed top-20 left-10 w-64 h-64 bg-purple-600/10 rounded-full blur-[80px] pointer-events-none"></div>
             <div className="fixed bottom-20 right-10 w-96 h-96 bg-pink-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -144,15 +147,29 @@ export default function Dashboard() {
                             <div className="flex justify-between items-center mb-6">
                                 <div className="text-left">
                                     <h2 className="text-white font-black uppercase text-lg flex items-center gap-2">
-                                        <Zap className="w-4 h-4 text-yellow-500" /> Live Radar
+                                        <Zap className="w-4 h-4 text-yellow-500" /> Live {viewMode === 'Radar' ? 'Radar' : 'Map'}
                                     </h2>
                                     <p className="text-xs text-gray-500">Scanning for signals in 5km radius</p>
                                 </div>
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></div>
+                                <div className="flex items-center gap-2 bg-black/50 p-1 rounded-full border border-white/10">
+                                    <button
+                                        onClick={() => setViewMode('Radar')}
+                                        className={`px-3 py-1 rounded-full text-xs font-bold transition ${viewMode === 'Radar' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Radar
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('Map')}
+                                        className={`px-3 py-1 rounded-full text-xs font-bold transition ${viewMode === 'Map' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Map
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="py-4">
-                                <SignalRadar />
+                            <div className="py-4 min-h-[400px] flex items-center justify-center">
+                                {viewMode === 'Radar' ? <SignalRadar /> : <MapView signals={[]} />}
+                                {/* Note: Pass real signals prop once available in state */}
                             </div>
 
                             <Button variant="primary" glow className="w-full mt-6 py-4 rounded-xl group" onClick={() => setIsSignalModalOpen(true)}>

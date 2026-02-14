@@ -6,6 +6,7 @@ import { X, Coffee, Clapperboard, Monitor, Bike, User } from "lucide-react";
 import { Button } from "./ui/Button";
 import axios from "axios";
 import io from "socket.io-client";
+import { API_URL } from "@/lib/constants";
 
 const ACTIVITIES = [
     { id: "Coffee", icon: Coffee, label: "Coffee Break" },
@@ -29,35 +30,41 @@ export default function CreateSignalModal({ isOpen, onClose, user }: CreateSigna
         if (!selectedActivity || !user) return;
         setLoading(true);
 
-        try {
+        const broadcast = (lat: number, lng: number) => {
             // 1. Save to DB
-            await axios.post('http://localhost:5000/api/signals', {
-                userId: user.id || user._id, // Handle potential ID format diff
+            axios.post(`${API_URL}/api/signals`, {
+                userId: user.id || user._id,
                 activity: selectedActivity,
-                location: { lat: 0, lng: 0 } // Mock location for now
+                location: { lat, lng }
+            }).then(() => {
+                // 2. Emit Socket Event
+                const socket = io(API_URL);
+                socket.emit('send-signal', {
+                    username: user.username,
+                    activity: selectedActivity,
+                    location: { lat, lng }
+                });
+                onClose();
+            }).catch(err => {
+                console.error("Failed to broadcast signal", err);
+            }).finally(() => {
+                setLoading(false);
             });
+        };
 
-            // 2. Emit Socket Event (Socket initialized on dashboard, but we can emit here if we had global socket context. 
-            // For now, simpler to just rely on DB or re-emit if socket is prop)
-            // Actually, let's just use a temporary socket connection to emit, or better, let the backend emit upon DB save?
-            // Our backend code: `socket.on('send-signal', ...)` expects client to emit.
-            // Let's open a quick connection or reuse one. 
-            // Better approach: User clicks broadcast -> API call -> Backend emits 'signal-received' to all clients.
-            // My backend `signals.js` route currently just saves. I should update it to emit.
-            // But for now, client-side emit is faster for visual feedback.
-
-            const socket = io('http://localhost:5000');
-            socket.emit('send-signal', {
-                username: user.username,
-                activity: selectedActivity,
-                location: { lat: 0, lng: 0 }
-            });
-
-            onClose();
-        } catch (err) {
-            console.error("Failed to broadcast signal", err);
-        } finally {
-            setLoading(false);
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    broadcast(pos.coords.latitude, pos.coords.longitude);
+                },
+                (err) => {
+                    console.error("Geo error:", err);
+                    // Fallback to London if denied
+                    broadcast(51.505, -0.09);
+                }
+            );
+        } else {
+            broadcast(51.505, -0.09);
         }
     };
 
@@ -97,8 +104,8 @@ export default function CreateSignalModal({ isOpen, onClose, user }: CreateSigna
                                     key={act.id}
                                     onClick={() => setSelectedActivity(act.id)}
                                     className={`p-4 rounded-xl flex flex-col items-center gap-2 transition border ${selectedActivity === act.id
-                                            ? "bg-purple-600/20 border-purple-500 text-white"
-                                            : "bg-white/5 border-transparent text-gray-400 hover:bg-white/10"
+                                        ? "bg-purple-600/20 border-purple-500 text-white"
+                                        : "bg-white/5 border-transparent text-gray-400 hover:bg-white/10"
                                         }`}
                                 >
                                     <act.icon className={`w-6 h-6 ${selectedActivity === act.id ? 'text-purple-400' : ''}`} />

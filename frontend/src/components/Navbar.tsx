@@ -5,16 +5,17 @@ import { Button } from "./ui/Button";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { User, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 export default function Navbar() {
     const pathname = usePathname();
     const isAuthPage = pathname === "/login" || pathname === "/register";
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<{ username?: string } | null>(null);
 
     useEffect(() => {
         // Check auth status on mount
         const userData = localStorage.getItem("user");
+        // eslint-disable-next-line
         if (userData) setUser(JSON.parse(userData));
     }, [pathname]);
 
@@ -34,9 +35,12 @@ export default function Navbar() {
             className="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-md bg-black/50 border-b border-white/5 supports-[backdrop-filter]:bg-black/20"
         >
             <Link href="/">
-                <h1 className="text-2xl font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 cursor-pointer hover:opacity-80 transition">
-                    SOLO HUMAN
-                </h1>
+                <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition">
+                    <img src="/logo.jpeg" alt="Solo Human Logo" className="w-10 h-10 rounded-full border-2 border-purple-500" />
+                    <h1 className="text-2xl font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 hidden sm:block">
+                        SOLO HUMAN
+                    </h1>
+                </div>
             </Link>
 
             <div className="flex gap-4 items-center">

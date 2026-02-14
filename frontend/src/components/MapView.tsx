@@ -1,81 +1,116 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import Map, { Marker } from 'react-map-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { MapPin } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+// Fix for default marker icon in Next.js
+const icon = L.icon({
+    iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+});
 
-export default function MapView({ signals }: { signals: any[] }) {
-    const [viewState, setViewState] = useState({
-        latitude: 12.9716, // Default: Bangalore
-        longitude: 77.5946,
-        zoom: 12
-    });
+// Component to recenter map when coords change
+function RecenterMap({ lat, lng }: { lat: number, lng: number }) {
+    const map = useMap();
+    useEffect(() => {
+        map.flyTo([lat, lng], map.getZoom());
+    }, [lat, lng, map]);
+    return null;
+}
+
+
+interface Signal {
+    id?: string;
+    activity: string;
+    username?: string;
+    location?: { lat: number; lng: number };
+    visual?: { top: string; left: string };
+}
+
+
+export default function MapView({ signals }: { signals: Signal[] }) {
+    const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
 
     useEffect(() => {
-        navigator.geolocation.getCurrentPosition((pos) => {
-            setViewState((prev) => ({
-                ...prev,
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude
-            }));
-        }, (err) => console.log("Geolocation error:", err));
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    setPosition({
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                    });
+                },
+                (err) => {
+                    console.error("Error getting location: ", err);
+                    // Fallback to a default location (e.g., London) if permission denied
+
+                    setPosition({ lat: 51.505, lng: -0.09 });
+                }
+            );
+        } else {
+
+            setPosition({ lat: 51.505, lng: -0.09 });
+        }
     }, []);
 
-    if (!MAPBOX_TOKEN) {
+    if (!position) {
         return (
             <div className="w-full h-96 flex items-center justify-center bg-gray-900/50 backdrop-blur-md rounded-3xl border border-white/10 text-center p-6">
-                <div>
-                    <h3 className="text-xl font-bold text-white mb-2">Map Unavailable</h3>
-                    <p className="text-sm text-gray-400 mb-4">
-                        To enable the real-time map, you need a Mapbox API Token.
-                    </p>
-                    <div className="bg-black/50 p-3 rounded text-xs font-mono text-purple-300">
-                        NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...
-                    </div>
-                </div>
+                <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-gray-400 text-sm">Locating you...</p>
             </div>
         );
     }
 
     return (
-        <div className="w-full h-96 rounded-3xl overflow-hidden border border-white/10 relative">
-            <Map
-                {...viewState}
-                onMove={evt => setViewState(evt.viewState)}
-                style={{ width: '100%', height: '100%' }}
-                mapStyle="mapbox://styles/mapbox/dark-v11"
-                mapboxAccessToken={MAPBOX_TOKEN}
+        <div className="w-full h-96 rounded-3xl overflow-hidden border border-white/10 relative z-0">
+            <MapContainer
+                center={[position.lat, position.lng]}
+                zoom={13}
+                scrollWheelZoom={false}
+                style={{ height: "100%", width: "100%" }}
             >
+                {/* Dark Mode Tiles */}
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                />
+
+                <RecenterMap lat={position.lat} lng={position.lng} />
+
                 {/* User Location */}
-                <Marker longitude={viewState.longitude} latitude={viewState.latitude} anchor="bottom">
-                    <div className="relative flex flex-col items-center">
-                        <div className="w-4 h-4 bg-purple-500 rounded-full border-2 border-white shadow-[0_0_20px_rgba(168,85,247,0.8)] animate-pulse"></div>
-                    </div>
+                <Marker position={[position.lat, position.lng]} icon={icon}>
+                    <Popup className="text-black">You are here</Popup>
                 </Marker>
 
                 {/* Signals */}
                 {signals.map((signal, idx) => (
                     <Marker
                         key={idx}
-                        // Mock random offset if location missing, for demo
-                        longitude={signal.location?.lng || viewState.longitude + (Math.random() * 0.02 - 0.01)}
-                        latitude={signal.location?.lat || viewState.latitude + (Math.random() * 0.02 - 0.01)}
-                        anchor="bottom"
+                        position={[
+                            signal.location?.lat || position.lat + ((idx * 0.01) % 0.05),
+                            signal.location?.lng || position.lng + ((idx * 0.01) % 0.05)
+                        ]}
+                        icon={icon}
                     >
-                        <div className="group relative cursor-pointer flex flex-col items-center">
-                            <MapPin className="w-8 h-8 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)] transition-transform group-hover:scale-110" />
-                            <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition bg-black/80 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap border border-white/10">
-                                {signal.activity} • {signal.username || 'User'}
+                        <Popup>
+                            <div className="text-black text-center">
+                                <strong className="uppercase text-purple-600">{signal.activity}</strong>
+                                <br />
+                                <span className="text-xs text-gray-600">by {signal.username || 'User'}</span>
                             </div>
-                        </div>
+                        </Popup>
                     </Marker>
                 ))}
-            </Map>
+            </MapContainer>
 
-            <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md text-[10px] text-gray-400 px-2 py-1 rounded border border-white/5">
-                Solo Map v1.0
+            <div className="absolute bottom-4 left-4 z-[1000] bg-black/60 backdrop-blur-md text-[10px] text-gray-400 px-2 py-1 rounded border border-white/5 pointer-events-none">
+                Solo Map (OpenStreetMap)
             </div>
         </div>
     );

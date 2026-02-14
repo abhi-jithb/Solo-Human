@@ -12,7 +12,7 @@ export default function Home() {
       <Navbar />
 
       {/* Dynamic Background Elements */}
-      <div className="absolute inset-0 bg-[url('/bg-grid.svg')] bg-center opacity-20 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(#ffffff33_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none"></div>
 
       {/* Floating 3D-style Elements (Animated) */}
       <motion.div
