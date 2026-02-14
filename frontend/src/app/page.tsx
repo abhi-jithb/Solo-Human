@@ -36,10 +36,12 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
-          <button className="group relative px-8 py-4 bg-white text-black text-lg font-black uppercase tracking-wider rounded-full hover:scale-105 transition btn-glow flex items-center gap-3">
-            Start A Quest
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
-          </button>
+          <Link href="/dashboard">
+            <button className="group relative px-8 py-4 bg-white text-black text-lg font-black uppercase tracking-wider rounded-full hover:scale-105 transition btn-glow flex items-center gap-3">
+              Start A Quest
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </button>
+          </Link>
 
           <button className="px-8 py-4 glass text-white text-lg font-bold rounded-full hover:bg-white/10 transition backdrop-blur-md flex items-center gap-2">
             <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
