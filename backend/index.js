@@ -5,6 +5,11 @@ const dotenv = require('dotenv');
 const http = require('http');
 const { Server } = require('socket.io');
 
+// Import Routes
+const authRoutes = require('./routes/auth');
+const questRoutes = require('./routes/quests');
+const signalRoutes = require('./routes/signals');
+
 dotenv.config();
 
 const app = express();
@@ -19,6 +24,11 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// Mount Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/quests', questRoutes);
+app.use('/api/signals', signalRoutes);
+
 // MongoDB Connection
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/solohuman';
@@ -27,7 +37,6 @@ mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ MongoDB Connected'))
     .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// Basic Routes
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Solo Human API 🚀' });
 });
@@ -37,12 +46,10 @@ io.on('connection', (socket) => {
     console.log('⚡ User connected:', socket.id);
 
     socket.on('update-location', (data) => {
-        // data: { userId, lat, lng }
         socket.broadcast.emit('location-updated', data);
     });
 
     socket.on('send-signal', (data) => {
-        // data: { userId, activity, location }
         socket.broadcast.emit('signal-received', data);
     });
 
