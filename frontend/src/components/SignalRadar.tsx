@@ -1,53 +1,86 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { User, MapPin } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+let socket: Socket;
 
 export default function SignalRadar() {
-    return (
-        <div className="relative w-full max-w-md mx-auto aspect-square glass rounded-full flex items-center justify-center overflow-hidden border border-white/5">
-            {/* Radar Rings */}
-            {[1, 2, 3].map((i) => (
-                <div
-                    key={i}
-                    className="absolute border border-purple-500/20 rounded-full"
-                    style={{ width: `${i * 33}%`, height: `${i * 33}%` }}
-                />
-            ))}
+  const [activeSignals, setActiveSignals] = useState<any[]>([]);
+  const [isScanning, setIsScanning] = useState(true);
 
-            {/* Scanning Line */}
-            <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                className="absolute w-1/2 h-1/2 top-0 right-0 bg-gradient-to-t from-transparent to-purple-500/20 origin-bottom-left rounded-tr-full"
-            />
+  useEffect(() => {
+    // Initialize Socket
+    socket = io('http://localhost:5000');
 
-            {/* Center User */}
-            <div className="relative z-10 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)]">
-                <User className="text-white w-6 h-6" />
-            </div>
+    socket.on('connect', () => {
+      // console.log('Connected to Signal Network');
+    });
 
-            {/* Mock Nearby Signals */}
-            <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 1 }}
-                className="absolute top-1/4 right-1/4"
-            >
-                <div className="relative group">
-                    <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center animate-pulse cursor-pointer hover:scale-110 transition">
-                        <MapPin className="w-4 h-4 text-black" />
-                    </div>
-                    {/* Tooltip */}
-                    <div className="absolute top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition whitespace-nowrap bg-black/80 px-2 py-1 rounded text-xs text-yellow-400 pointer-events-none">
-                        Coffee • 200m
-                    </div>
-                </div>
-            </motion.div>
+    socket.on('signal-received', (data) => {
+      // console.log('New Signal:', data);
+      setActiveSignals((prev) => [...prev, data]);
+    });
 
-            <div className="absolute bottom-10 py-2 px-4 glass rounded-full text-xs text-gray-400 font-mono tracking-widest uppercase">
-                Scanning Area...
-            </div>
-        </div>
-    );
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, []);
+
+  return (
+    <div className="relative w-full max-w-md mx-auto aspect-square glass rounded-full flex items-center justify-center overflow-hidden border border-white/5">
+      {/* Radar Rings */}
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="absolute border border-purple-500/20 rounded-full"
+          style={{ width: `${i * 33}%`, height: `${i * 33}%` }}
+        />
+      ))}
+
+      {/* Scanning Line */}
+      {isScanning && (
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          className="absolute w-1/2 h-1/2 top-0 right-0 bg-gradient-to-t from-transparent to-purple-500/20 origin-bottom-left rounded-tr-full"
+        />
+      )}
+
+      {/* Center User */}
+      <div className="relative z-10 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)]">
+        <div className="w-4 h-4 bg-white rounded-full animate-pulse shadow-[0_0_10px_white]"></div>
+      </div>
+
+      {/* Real Signals from Socket */}
+      {activeSignals.map((signal, idx) => (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          key={idx}
+          className="absolute z-20 cursor-pointer group"
+          style={{
+            // Random position for mock visualization if lat/lng is missing or too close
+            // In prod, map exact relative coordinates
+            top: `${50 + (Math.random() * 60 - 30)}%`,
+            left: `${50 + (Math.random() * 60 - 30)}%`
+          }}
+        >
+          <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center hover:scale-110 transition shadow-[0_0_15px_rgba(250,204,21,0.6)] animate-bounce-slow">
+            <MapPin className="w-4 h-4 text-black" />
+          </div>
+          {/* Tooltip */}
+          <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition whitespace-nowrap bg-black/90 px-3 py-1 rounded-full text-xs font-bold text-yellow-500 pointer-events-none border border-yellow-500/30 shadow-xl z-30">
+            {signal.activity || 'Signal'}
+          </div>
+        </motion.div>
+      ))}
+
+      <div className="absolute bottom-6 py-1 px-4 glass rounded-full text-[10px] text-purple-300 font-mono tracking-widest uppercase animate-pulse">
+        {activeSignals.length > 0 ? `${activeSignals.length} Signals Detected` : "Scanning Frequency..."}
+      </div>
+    </div>
+  );
 }
