@@ -13,8 +13,12 @@ export default function Home() {
           Solo Human
         </h1>
         <div className="flex gap-4">
-          <button className="px-4 py-2 rounded-full glass hover:bg-white/10 transition text-sm font-bold">Login</button>
-          <button className="px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white transition text-sm font-bold shadow-lg shadow-purple-500/30">Join the Tribe</button>
+          <Link href="/login">
+            <button className="px-4 py-2 rounded-full glass hover:bg-white/10 transition text-sm font-bold">Login</button>
+          </Link>
+          <Link href="/register">
+            <button className="px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white transition text-sm font-bold shadow-lg shadow-purple-500/30">Join the Tribe</button>
+          </Link>
         </div>
       </nav>
 

@@ -1,38 +1,62 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // Import from next/navigation
+import axios from "axios";
 import { motion } from "framer-motion";
-import { MapPin, Coffee, BookOpen, Utensils } from "lucide-react";
+import { MapPin, Coffee, BookOpen, Utensils, Star, AlertCircle } from "lucide-react";
 import QuestCard from "@/components/QuestCard";
 import SignalRadar from "@/components/SignalRadar";
 
-const MOCK_QUESTS = [
-    {
-        id: 1,
-        title: "The Silent Reader",
-        category: "Culture",
-        xp: 150,
-        difficulty: "Easy" as const,
-        icon: BookOpen,
-    },
-    {
-        id: 2,
-        title: "Urban Explorer",
-        category: "Adventure",
-        xp: 300,
-        difficulty: "Medium" as const,
-        icon: MapPin,
-    },
-    {
-        id: 3,
-        title: "Dining Solo",
-        category: "Social",
-        xp: 500,
-        difficulty: "Hard" as const,
-        icon: Utensils,
-    },
-];
+interface Quest {
+    _id: string;
+    title: string;
+    category: string;
+    xpReward: number;
+    difficulty: "Easy" | "Medium" | "Hard";
+}
+
+const CATEGORY_ICONS: any = {
+    Culture: BookOpen,
+    Adventure: MapPin,
+    Social: Utensils,
+    Chill: Coffee,
+};
 
 export default function Dashboard() {
+    const router = useRouter();
+    const [quests, setQuests] = useState<Quest[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        // Auth Check
+        const token = localStorage.getItem('token');
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
+        const userData = localStorage.getItem('user');
+        if (userData) setUser(JSON.parse(userData));
+
+        // Fetch Quests
+        const fetchQuests = async () => {
+            try {
+                const res = await axios.get('http://localhost:5000/api/quests');
+                setQuests(res.data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchQuests();
+    }, [router]);
+
+    if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-purple-500">Loading Solo World...</div>;
+
     return (
         <div className="min-h-screen bg-black text-white pb-20">
             {/* Header */}
@@ -42,12 +66,14 @@ export default function Dashboard() {
                 </h1>
                 <div className="flex items-center gap-4">
                     <div className="text-right hidden md:block">
-                        <p className="text-xs text-gray-400 uppercase font-bold">Level 5</p>
+                        <p className="text-xs text-gray-400 uppercase font-bold">Level {user?.level || 1}</p>
                         <div className="w-24 h-2 bg-gray-800 rounded-full mt-1 overflow-hidden">
-                            <div className="h-full bg-purple-500 w-2/3"></div>
+                            <div className="h-full bg-purple-500 w-1/3"></div>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 border-2 border-white/20"></div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 border-2 border-white/20 flex items-center justify-center font-bold">
+                        {user?.username?.[0]?.toUpperCase()}
+                    </div>
                 </div>
             </header>
 
@@ -71,11 +97,11 @@ export default function Dashboard() {
                         <h2 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Your Impact</h2>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-4 rounded-xl bg-white/5 text-center">
-                                <p className="text-2xl font-black text-white">12</p>
+                                <p className="text-2xl font-black text-white">{user?.questsCompleted?.length || 0}</p>
                                 <p className="text-xs text-gray-500 uppercase">Quests</p>
                             </div>
                             <div className="p-4 rounded-xl bg-white/5 text-center">
-                                <p className="text-2xl font-black text-yellow-400">2.4k</p>
+                                <p className="text-2xl font-black text-yellow-400">{user?.xp || 0}</p>
                                 <p className="text-xs text-gray-500 uppercase">XP</p>
                             </div>
                         </div>
@@ -92,15 +118,26 @@ export default function Dashboard() {
                         <button className="text-purple-400 text-sm font-bold hover:text-purple-300">View All →</button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {MOCK_QUESTS.map((quest) => (
-                            <QuestCard
-                                key={quest.id}
-                                {...quest}
-                                onClick={() => console.log("Quest clicked:", quest.title)}
-                            />
-                        ))}
-                    </div>
+                    {quests.length === 0 ? (
+                        <div className="p-8 rounded-2xl border border-dashed border-gray-700 text-center text-gray-500">
+                            <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            No quests available nearby.
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {quests.map((quest) => (
+                                <QuestCard
+                                    key={quest._id}
+                                    title={quest.title}
+                                    category={quest.category}
+                                    xp={quest.xpReward}
+                                    difficulty={quest.difficulty}
+                                    icon={CATEGORY_ICONS[quest.category] || Star}
+                                    onClick={() => console.log("Quest clicked:", quest.title)}
+                                />
+                            ))}
+                        </div>
+                    )}
 
                     {/* Daily Challenge Banner */}
                     <motion.div
