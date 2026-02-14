@@ -9,6 +9,7 @@ import QuestCard from "@/components/QuestCard";
 import SignalRadar from "@/components/SignalRadar";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
+import CreateSignalModal from "@/components/CreateSignalModal";
 
 interface Quest {
     _id: string;
@@ -30,6 +31,7 @@ export default function Dashboard() {
     const [quests, setQuests] = useState<Quest[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
+    const [isSignalModalOpen, setIsSignalModalOpen] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -153,7 +155,7 @@ export default function Dashboard() {
                                 <SignalRadar />
                             </div>
 
-                            <Button variant="primary" glow className="w-full mt-6 py-4 rounded-xl group">
+                            <Button variant="primary" glow className="w-full mt-6 py-4 rounded-xl group" onClick={() => setIsSignalModalOpen(true)}>
                                 Broadcast Signal
                             </Button>
                         </div>
