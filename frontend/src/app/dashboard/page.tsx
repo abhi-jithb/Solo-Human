@@ -6,10 +6,19 @@ import api from "@/lib/api";
 import { motion } from "framer-motion";
 import { MapPin, Coffee, BookOpen, Utensils, Star, AlertCircle, Trophy, Zap } from "lucide-react";
 import QuestCard from "@/components/QuestCard";
-import SignalRadar from "@/components/SignalRadar";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
-import MapView from "@/components/MapView";
+import dynamic from "next/dynamic";
+
+const MapView = dynamic(() => import("@/components/MapView"), {
+    ssr: false,
+    loading: () => <div className="w-full h-96 bg-gray-900 animate-pulse rounded-3xl" />
+});
+
+const SignalRadar = dynamic(() => import("@/components/SignalRadar"), {
+    ssr: false,
+    loading: () => <div className="w-full h-96 bg-gray-900 animate-pulse rounded-3xl" />
+});
 
 interface Quest {
     _id: string;
