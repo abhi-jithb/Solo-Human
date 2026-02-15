@@ -26,8 +26,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: "px-8 py-4 text-lg font-black uppercase tracking-widest",
     };
 
+    const MotionButton = motion.button as any;
+
     return (
-      <motion.button
+      <MotionButton
         ref={ref}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -38,10 +40,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           glow && "shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:shadow-[0_0_30px_rgba(168,85,247,0.7)]",
           className
         )}
-        {...props as any}
+        {...props}
       >
         {children}
-      </motion.button>
+      </MotionButton>
     );
   }
 );
