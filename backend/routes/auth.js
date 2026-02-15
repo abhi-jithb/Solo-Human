@@ -27,9 +27,19 @@ router.post('/register', async (req, res) => {
         await newUser.save();
 
         // Create Token
-        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.status(201).json({ token, user: { id: newUser._id, username: newUser.username, email: newUser.email } });
+        // Set Cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.status(201).json({
+            user: { id: newUser._id, username: newUser.username, email: newUser.email }
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -49,11 +59,49 @@ router.post('/login', async (req, res) => {
         if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
         // Create Token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
+        // Set Cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.json({
+            user: { id: user._id, username: user.username, email: user.email }
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Logout
+router.post('/logout', (req, res) => {
+    res.cookie("token", "", {
+        httpOnly: true,
+        expires: new Date(0),
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
+    res.json({ message: "Logged out successfully" });
+});
+
+// Get Current User
+router.get('/me', async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select('-password');
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        res.json(user);
+    } catch (err) {
+        res.status(401).json({ message: "Invalid token" });
     }
 });
 

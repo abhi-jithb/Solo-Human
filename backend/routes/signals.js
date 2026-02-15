@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Signal = require('../models/Signal');
+const { protect } = require('../middleware/auth');
 
 // Get active signals nearby (Mock nearby for now)
 router.get('/', async (req, res) => {
@@ -14,9 +15,17 @@ router.get('/', async (req, res) => {
 });
 
 // Broadcast a signal
-router.post('/', async (req, res) => {
+router.post('/', protect, async (req, res) => {
     try {
-        const newSignal = new Signal(req.body);
+        const { activity, location } = req.body;
+        const newSignal = new Signal({
+            userId: req.user._id,
+            activity,
+            location: {
+                type: 'Point',
+                coordinates: [location.lng, location.lat] // GeoJSON: [longitude, latitude]
+            }
+        });
         await newSignal.save();
         res.status(201).json(newSignal);
     } catch (err) {

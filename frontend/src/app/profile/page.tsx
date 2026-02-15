@@ -1,18 +1,29 @@
 "use client";
 
+import api from "@/lib/api";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { Trophy, MapPin, Calendar, Star, Edit2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export default function Profile() {
+    const router = useRouter();
     const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        const userData = localStorage.getItem("user");
-        if (userData) setUser(JSON.parse(userData));
-    }, []);
+        const fetchUser = async () => {
+            try {
+                const res = await api.get('/api/auth/me');
+                setUser(res.data);
+            } catch (err) {
+                console.error(err);
+                router.push('/login');
+            }
+        };
+        fetchUser();
+    }, [router]);
 
     if (!user) return (
         <div className="min-h-screen bg-black flex items-center justify-center text-purple-500">

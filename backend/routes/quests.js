@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Quest = require('../models/Quest');
+const { protect } = require('../middleware/auth');
 
 // Get all quests
 router.get('/', async (req, res) => {
@@ -13,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new quest (Admin or User generated)
-router.post('/', async (req, res) => {
+router.post('/', protect, async (req, res) => {
     try {
         const newQuest = new Quest(req.body);
         await newQuest.save();

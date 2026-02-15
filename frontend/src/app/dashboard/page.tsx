@@ -2,16 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import api from "@/lib/api";
 import { motion } from "framer-motion";
 import { MapPin, Coffee, BookOpen, Utensils, Star, AlertCircle, Trophy, Zap } from "lucide-react";
 import QuestCard from "@/components/QuestCard";
 import SignalRadar from "@/components/SignalRadar";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
-import CreateSignalModal from "@/components/CreateSignalModal";
 import MapView from "@/components/MapView";
-import { API_URL } from "@/lib/constants";
 
 interface Quest {
     _id: string;
@@ -37,25 +35,25 @@ export default function Dashboard() {
     const [viewMode, setViewMode] = useState<'Radar' | 'Map'>('Map');
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            router.push('/login');
-            return;
-        }
-        const userData = localStorage.getItem('user');
-        if (userData) setUser(JSON.parse(userData));
-
-        const fetchQuests = async () => {
+        const checkAuthAndFetchData = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/quests`);
-                setQuests(res.data);
+                // Verify session
+                const userRes = await api.get('/api/auth/me');
+                setUser(userRes.data);
+                localStorage.setItem('user', JSON.stringify(userRes.data));
+
+                // Fetch Quests
+                const questsRes = await api.get(`/api/quests`);
+                setQuests(questsRes.data);
             } catch (err) {
-                console.error(err);
+                console.error("Auth failed or fetch error:", err);
+                router.push('/login');
             } finally {
                 setLoading(false);
             }
         };
-        fetchQuests();
+
+        checkAuthAndFetchData();
     }, [router]);
 
     if (loading) return (

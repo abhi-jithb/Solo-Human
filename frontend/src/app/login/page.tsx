@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '@/lib/api';
 import { motion } from 'framer-motion';
-import { API_URL } from '@/lib/constants';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -15,9 +14,8 @@ export default function LoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await axios.post(`${API_URL}/api/auth/login`, formData);
-            localStorage.setItem('token', res.data.token);
-            localStorage.setItem('user', JSON.stringify(res.data.user)); // Simple storage
+            const res = await api.post(`/api/auth/login`, formData);
+            localStorage.setItem('user', JSON.stringify(res.data.user)); // Still store user info for UI
             router.push('/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed');

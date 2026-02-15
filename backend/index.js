@@ -10,18 +10,56 @@ const authRoutes = require('./routes/auth');
 const questRoutes = require('./routes/quests');
 const signalRoutes = require('./routes/signals');
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
+
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Trust proxy if behind a load balancer (like Render, Heroku)
+app.set('trust proxy', 1);
+
+// Security Middlewares
+app.use(helmet());
+app.use(cookieParser());
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use('/api/', limiter);
+
+// CORS Configuration
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000', // Local development
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+}));
+
 const io = new Server(server, {
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
-app.use(cors());
 app.use(express.json());
 
 // Mount Routes

@@ -5,6 +5,7 @@ import { Button } from "./ui/Button";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import api from "@/lib/api";
 import { LogOut } from "lucide-react";
 
 export default function Navbar() {
@@ -21,10 +22,17 @@ export default function Navbar() {
 
     if (isAuthPage) return null;
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/";
+    const handleLogout = async () => {
+        try {
+            await api.post("/api/auth/logout");
+            localStorage.removeItem("user");
+            window.location.href = "/";
+        } catch (err) {
+            console.error("Logout failed:", err);
+            // Fallback: still clear local data
+            localStorage.removeItem("user");
+            window.location.href = "/";
+        }
     };
 
     return (

@@ -4,9 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Coffee, Clapperboard, Monitor, Bike, User } from "lucide-react";
 import { Button } from "./ui/Button";
-import axios from "axios";
+import api from "@/lib/api";
 import io from "socket.io-client";
-import { API_URL } from "@/lib/constants";
 
 const ACTIVITIES = [
     { id: "Coffee", icon: Coffee, label: "Coffee Break" },
@@ -32,13 +31,12 @@ export default function CreateSignalModal({ isOpen, onClose, user }: CreateSigna
 
         const broadcast = (lat: number, lng: number) => {
             // 1. Save to DB
-            axios.post(`${API_URL}/api/signals`, {
-                userId: user.id || user._id,
+            api.post('/api/signals', {
                 activity: selectedActivity,
                 location: { lat, lng }
             }).then(() => {
-                // 2. Emit Socket Event
-                const socket = io(API_URL);
+                // 2. Emit Socket Event (Optional: consider using a global socket instance)
+                const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
                 socket.emit('send-signal', {
                     username: user.username,
                     activity: selectedActivity,
