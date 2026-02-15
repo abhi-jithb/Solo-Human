@@ -4,7 +4,7 @@ import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import React from "react";
 
-interface ButtonProps extends HTMLMotionProps<"button"> {
+interface ButtonProps extends Omit<HTMLMotionProps<"button">, "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart"> {
   variant?: "primary" | "secondary" | "glass" | "outline";
   size?: "sm" | "md" | "lg";
   glow?: boolean;
