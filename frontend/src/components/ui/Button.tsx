@@ -38,7 +38,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           glow && "shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:shadow-[0_0_30px_rgba(168,85,247,0.7)]",
           className
         )}
-        {...props}
+        {...props as any}
       >
         {children}
       </motion.button>
